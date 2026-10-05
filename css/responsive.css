@@ -9,6 +9,47 @@
   .product-actions { flex-direction: column; }
 }
 
+@media (max-width: 767px) {
+  .container,
+  .section,
+  .hero,
+  .social-cta,
+  .whatsapp-final,
+  .site-footer > .container,
+  .site-header .navbar,
+  .site-header .search-panel .container,
+  main > section {
+    margin-inline: 12px;
+    width: auto;
+    max-width: calc(100% - 24px);
+  }
+
+  .hero {
+    margin-inline: 12px;
+    width: auto;
+    max-width: calc(100% - 24px);
+  }
+
+  .hero-visual {
+    margin-inline: 8px;
+  }
+
+  .section-alt,
+  .promo-banner,
+  .social-cta,
+  .whatsapp-final,
+  .site-footer {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .category-rail {
+    padding-left: 4px;
+    padding-right: 4px;
+    margin-inline: 0;
+  }
+}
+
 /* Tablet and up */
 @media (min-width: 640px) {
   .hero { grid-template-columns: 1.1fr 0.9fr; padding: 64px 0 72px; }
