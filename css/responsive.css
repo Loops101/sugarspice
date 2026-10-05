@@ -5,8 +5,12 @@
 
 /* Small phones: keep 2-column product grid always (see style.css default) */
 @media (max-width: 380px) {
-  .container { padding-inline: 14px; }
-  .product-actions { flex-direction: column; }
+  .container {
+    padding-inline: 14px;
+  }
+  .product-actions {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 767px) {
@@ -52,30 +56,65 @@
 
 /* Tablet and up */
 @media (min-width: 640px) {
-  .hero { grid-template-columns: 1.1fr 0.9fr; padding: 64px 0 72px; }
-  .product-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .benefit-grid { grid-template-columns: repeat(2, 1fr); }
-  .social-gallery { grid-template-columns: repeat(4, 1fr); }
-  .footer-grid { grid-template-columns: 1.3fr 1fr 1fr 1fr; }
-  .product-detail { grid-template-columns: 1fr 1fr; }
-  .cart-layout { grid-template-columns: 1.6fr 1fr; align-items: start; }
-  .contact-grid { grid-template-columns: 1.1fr 0.9fr; }
+  .hero {
+    grid-template-columns: 1.1fr 0.9fr;
+    padding: 64px 0 72px;
+  }
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .benefit-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .social-gallery {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .footer-grid {
+    grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  }
+  .product-detail {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cart-layout {
+    grid-template-columns: 1.6fr 1fr;
+    align-items: start;
+  }
+  .contact-grid {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
 }
 
 /* Desktop */
 @media (min-width: 900px) {
-  .nav-links { display: flex; }
-  .hamburger { display: none; }
-  .whatsapp-pill { display: inline-flex; }
-  .product-grid { grid-template-columns: repeat(4, 1fr); }
-  .benefit-grid { grid-template-columns: repeat(4, 1fr); }
-  h1 { max-width: 18ch; }
+  .nav-links {
+    display: flex;
+  }
+  .hamburger {
+    display: none;
+  }
+  .whatsapp-pill {
+    display: inline-flex;
+  }
+  .product-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .benefit-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  h1 {
+    max-width: 18ch;
+  }
 }
 
 @media (min-width: 1100px) {
-  .hero-copy { max-width: 42ch; }
+  .hero-copy {
+    max-width: 42ch;
+  }
 }
 
 @media (min-width: 640px) and (max-width: 899px) {
-  .mobile-menu.is-open { display: flex; }
+  .mobile-menu.is-open {
+    display: flex;
+  }
 }
