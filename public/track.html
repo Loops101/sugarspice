@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Track your order | Sugar &amp; Spice Couture</title>
+<meta name="description" content="Look up your Sugar &amp; Spice Couture order with your order number and phone number. No account needed.">
+<meta name="theme-color" content="#0b0a09">
+
+<link rel="canonical" href="%ORIGIN%/track.html">
+<meta property="og:title" content="Track your order | Sugar &amp; Spice Couture">
+<meta property="og:description" content="Look up your Sugar &amp; Spice Couture order with your order number and phone number. No account needed.">
+<meta property="og:image" content="%ORIGIN%/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..600;1,6..96,400..500&family=Jost:wght@300..600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/theme.css">
+</head>
+<body data-page="track">
+<main id="main">
+<div class="wrap page-head" style="max-width:560px">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> / <span aria-current="page">Track an order</span></nav>
+  <h1 style="font-size:clamp(2.2rem,5vw,3.4rem)">Track your order</h1>
+  <p>No account needed. Enter your order number and the phone number you used at checkout.</p>
+  <form class="glass co-block" id="track-form" novalidate style="margin-top:24px">
+    <div class="form-error" role="alert" hidden></div>
+    <div class="field"><label for="t-number">Order number</label><input class="input" id="t-number" name="number" placeholder="SSC-1042" autocomplete="off" autocapitalize="characters" required></div>
+    <div class="field"><label for="t-phone">Phone number</label><input class="input" id="t-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0712 345 678" required></div>
+    <button class="btn btn-gold btn-block" type="submit">Find my order</button>
+  </form>
+</div>
+</main>
+<script type="module" src="/js/pages/track.js"></script>
+</body>
+</html>

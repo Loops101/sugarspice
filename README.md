@@ -1,163 +1,72 @@
-# Sugar & Spice Couture — Website
+# Sugar & Spice Couture: online store
 
-A frontend-only e-commerce website for Sugar & Spice Couture, a Nairobi jewelry
-and accessories shop. Pure HTML, CSS and vanilla JavaScript — no backend,
-no database, no build step. Checkout happens through WhatsApp.
+A complete jewelry store for Nairobi: browse, add to bag and **check out on the site** (guest first, sign-in optional), with M-Pesa or pay-on-delivery, plus a private **admin dashboard** with sales analytics, orders, products, customers, coupons and settings. Black and gold glass design.
 
-## 1. Project structure
+Only four dependencies. Needs Node 18 or newer (22 recommended).
 
-```
-/project
-├── index.html          Homepage
-├── shop.html            Product browsing, search, filter, sort
-├── product.html          Single product page (?id=spc-001)
-├── cart.html             Cart + WhatsApp checkout
-├── about.html            Brand story, FAQs
-├── contact.html          Contact details
-├── 404.html               Custom not-found page
-│
-├── css/
-│   ├── style.css          Design tokens, layout, components
-│   ├── responsive.css      Breakpoints
-│   └── animations.css      Micro-interactions
-│
-├── js/
-│   ├── config.js           Business config (WhatsApp number, Instagram, address)
-│   ├── products.js          Product catalog + rendering helpers
-│   ├── cart.js               localStorage cart logic + cart page
-│   ├── whatsapp.js            WhatsApp message + checkout
-│   ├── shop.js                 Shop page: filter / search / sort
-│   ├── product.js               Product detail page logic
-│   └── app.js                    Shared nav, search, toasts, reveal
-│
-├── favicon/favicon.svg
-├── robots.txt
-├── sitemap.xml
-└── README.md
-```
+## Run it
 
-## 2. How to add a product
+    npm install
+    cp .env.example .env      (Windows: copy .env.example .env)
+    npm start
 
-Open `js/products.js` and add a new object to the `products` array:
+Open http://localhost:3000. The shop is at `/`, the admin at `/admin`.
 
-```js
-{
-  id: "spc-017",                 // unique, no spaces
-  name: "New Piece Name",
-  category: "Necklaces",         // must match one of CATEGORIES
-  price: 1500,
-  oldPrice: null,                 // or a number higher than price, to show a sale badge
-  description: "Short description shown on the product page.",
-  images: ["https://res.cloudinary.com/.../image1.jpg"],
-  featured: false,                 // shows on homepage "Featured pieces"
-  bestseller: false,
-  available: true,
-  dateAdded: "2026-09-16",          // used by the "Newest" sort
-}
-```
+On the first start the server creates the admin account and prints the login in the console. To choose your own, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` before the first start. Forgot it later: `npm run reset-admin -- "NewPassword123"`.
 
-No other file needs to change — the shop grid, homepage, search, and product
-page all read from this one array.
+The first start also loads **sample products, orders and a WELCOME10 coupon** so the dashboard has something to show. Remove them with the button on the dashboard, or `npm run demo:clear`. Bring them back with `npm run demo:add`.
 
-## 3. How to change prices
+## Owner and employee access
 
-Edit the `price` (and optional `oldPrice`) field for the relevant product in
-`js/products.js`. Prices are plain numbers in KES; formatting (e.g. "KSh
-1,500") is handled automatically by `formatPrice()` in `js/config.js`.
+Two back-office roles share the same sign-in page at `/admin`:
 
-## 4. How to change Cloudinary images
+| | Owner | Employee |
+|---|---|---|
+| Dashboard | Sales analytics | Work to do (orders, low stock), no sales figures |
+| Orders | Everything, refunds, CSV export | View, update status, mark paid, add notes. Cannot cancel paid orders or record refunds |
+| Products | Add, edit, stock, delete | Add, edit, stock. Cannot delete |
+| Customers | With spend totals | Contact details only |
+| Coupons, Settings, Team | Yes | No |
 
-Replace the `images` array for a product with your Cloudinary URLs, e.g.:
+The owner adds employees under **Team** (name, email, starting password), and can lock, reset the password of, or remove them. Every order change is stamped with who made it. Internal notes are never shown to customers.
 
-```js
-images: [
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123/necklace-1.jpg",
-  "https://res.cloudinary.com/your-cloud-name/image/upload/v123/necklace-2.jpg",
-]
-```
+## How ordering works
 
-The site automatically applies Cloudinary transformations (resizing, auto
-quality/format) through the `cloudinaryUrl()` helper in `js/products.js` — you
-don't need to build transformation URLs by hand. Also set your cloud name in
-`STORE_CONFIG.cloudinaryCloudName` in `js/config.js` for reference.
+- Guests need only a name and phone number (email optional). They get an order number and a tracking link, and can look an order up on `/track` with number + phone.
+- An account is optional. After ordering, a guest can save the order to a new account. Signed-in customers get order history and saved details.
+- Prices, discounts and delivery fees are always calculated on the server. Stock is reserved when an order is placed and returned if it is cancelled or an M-Pesa order is not paid within 15 minutes.
+- Pay-on-delivery is blocked above KSh 50,000.
 
-Until real photography is added, products use placeholder images from
-picsum.photos so the site looks complete — these are safe to leave in a demo
-but should be replaced before launch.
+## Going live with M-Pesa
 
-## 5. How to change the WhatsApp number
+Out of the box M-Pesa is in **demo mode**: payments are simulated and no money moves. For real payments:
 
-Open `js/config.js` and update:
+1. Create a Safaricom Daraja app (developer.safaricom.co.ke) and get a Paybill/Till shortcode and passkey.
+2. Deploy the site on https (see below) and set in `.env`: `PUBLIC_URL`, `MPESA_ENV` (`sandbox` or `production`), `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, `MPESA_PASSKEY`, and a long random `MPESA_CALLBACK_SECRET`.
+3. Restart. The dashboard and Settings page show "live" when everything is set. The callback address is `PUBLIC_URL/api/payments/mpesa/callback/<MPESA_CALLBACK_SECRET>`, which the server sends to Daraja itself.
+4. Test with the sandbox first.
 
-```js
-whatsappNumber: "254711766189",
-```
+## Deploying
 
-Use the international format with no `+`, spaces, or leading `0` (e.g. a
-Kenyan number `0711 766 189` becomes `254711766189`). This single value
-powers every WhatsApp button and the checkout flow site-wide.
+Any host that runs Node works (Render, Railway, Fly.io, a VPS). Important:
 
-## 6. How to change the Instagram link
+- Set `NODE_ENV=production`, `TRUST_PROXY=1` (behind a proxy), `PUBLIC_URL`, and a long random `JWT_SECRET`.
+- Point `DATA_DIR` at a **persistent disk**. The database (`db.json`) and uploaded photos live there. Without a persistent disk they vanish on each deploy.
+- Back up `DATA_DIR` regularly (copy the folder).
+- Serve over https only.
 
-Also in `js/config.js`:
+## Things to replace before launch
 
-```js
-instagramHandle: "sugarspice_couture_",
-instagramUrl: "https://www.instagram.com/sugarspice_couture_/",
-```
+- Delivery fees (Nairobi 250, countrywide 450) are placeholders. Settings > Delivery.
+- Product photos: upload real ones under Products. Until then drawn illustrations show.
+- WhatsApp and phone number are set to +254 142 832 932 (Settings > Shop details).
+- Product photos: the sample products show drawn illustrations. Upload your own photos of the real pieces under Products (up to 6 per product).
+- Remove the sample data.
 
-## 7. How to change business information
+## Security notes
 
-Store name, tagline, address, and phone display all live in the
-`STORE_CONFIG` object at the top of `js/config.js`. Update the values there;
-pages that display this information (footer, contact page, structured data)
-pull from the same source, so most of it does not need editing per page.
+HttpOnly cookie sessions, bcrypt password hashes, rate limits on sign-in and ordering, same-origin checks on all changes, strict Content-Security-Policy, uploads verified by file signature, CSV export protected against formula injection. Data is a JSON file, which is fine for a small shop; move to a database if you grow to thousands of daily orders.
 
-The physical address is currently also written directly into the footer
-markup on each HTML page and into the `JewelryStore` structured data on
-`index.html` — update those if the shop location changes.
+## Tests
 
-## 8. How to deploy to Vercel
-
-1. Push this folder to a GitHub repository.
-2. In Vercel, choose **Add New Project** → import the repository.
-3. Framework preset: **Other** (static site) — no build command needed.
-4. Output directory: leave as the project root (`.`).
-5. Deploy. The site works the same on Netlify (drag-and-drop the folder, or
-   connect the repo) and GitHub Pages (enable Pages on the repo, root branch).
-
-## 9. How WhatsApp checkout works
-
-There is no payment gateway or server. When a customer clicks **Checkout via
-WhatsApp** on the cart page (or **Order on WhatsApp** on a product page),
-`js/whatsapp.js` builds a plain-text order message from the cart contents and
-opens:
-
-```
-https://wa.me/<whatsappNumber>?text=<url-encoded order message>
-```
-
-This opens WhatsApp (app or Web) with the message pre-filled, ready for the
-customer to send to the shop's WhatsApp number. Sugar & Spice Couture then
-confirms availability, delivery and payment directly in that chat.
-
-## 10. How the localStorage cart works
-
-`js/cart.js` stores the cart as a JSON array under the key `ssc_cart_v1` in
-the browser's `localStorage`, so it survives page refreshes and revisits on
-the same device/browser. Nothing is sent to a server. Customer checkout
-details entered on the cart page (name, location, notes) are only used to
-build the WhatsApp message and are not saved to localStorage.
-
-If `localStorage` is unavailable (e.g. private browsing with storage
-disabled), the cart still functions for the current page view but won't
-persist — `js/cart.js` guards every storage call so this fails gracefully
-rather than throwing errors.
-
----
-
-**Note on placeholder data:** product photography, and the homepage/Instagram
-gallery images, use picsum.photos placeholders. Business name, address, phone
-numbers and Instagram handle were taken directly from the brand's Instagram
-profile. No reviews, ratings, delivery promises, or product claims were
-invented — replace placeholder imagery before launch.
+With the server running: `BASE=http://localhost:3000 node test/api.test.js`.

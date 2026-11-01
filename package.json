@@ -1,0 +1,23 @@
+{
+  "name": "sugar-spice-couture-store",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Sugar & Spice Couture - full e-commerce store with on-site checkout, guest-first ordering and an admin dashboard",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "demo:add": "node server/seed.js demo",
+    "demo:clear": "node server/seed.js clear-demo",
+    "reset-admin": "node server/reset-admin.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shop Jewelry &amp; Accessories | Sugar &amp; Spice Couture</title>
+<meta name="description" content="Browse necklaces, earrings, bracelets, rings, jewelry sets and stainless steel pieces from Sugar &amp; Spice Couture, Nairobi.">
+<meta name="theme-color" content="#0b0a09">
+<link rel="canonical" href="%ORIGIN%/shop.html">
+<meta property="og:title" content="Shop Jewelry &amp; Accessories | Sugar &amp; Spice Couture">
+<meta property="og:description" content="Necklaces, earrings, bracelets, rings and sets. Order online with M-Pesa or pay on delivery.">
+<meta property="og:url" content="%ORIGIN%/shop.html">
+<meta property="og:image" content="%ORIGIN%/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..600;1,6..96,400..500&family=Jost:wght@300..600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/theme.css">
+</head>
+<body data-page="shop">
+<main id="main">
+  <div class="wrap page-head">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> / <span aria-current="page">Shop</span></nav>
+    <h1 id="shop-title">The collection</h1>
+    <p id="shop-sub">Pieces for every day and every occasion.</p>
+
+    <div class="shop-bar">
+      <div class="chips" id="chips" role="group" aria-label="Filter by category"></div>
+      <div class="shop-tools">
+        <div class="search">
+          <label class="sr-only" for="q">Search the collection</label>
+          <input class="input" id="q" type="search" placeholder="Search necklaces, sets, gold..." autocomplete="off" enterkeyhint="search">
+        </div>
+        <label class="sr-only" for="sort">Sort by</label>
+        <select class="input" id="sort">
+          <option value="featured">Featured</option>
+          <option value="newest">Newest</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="name">Name: A to Z</option>
+        </select>
+        <label class="toggle" for="instock"><input type="checkbox" id="instock"> In stock only</label>
+      </div>
+    </div>
+
+    <div class="count-row"><span id="count" role="status" aria-live="polite">Loading pieces</span><button class="link-btn" id="reset" type="button" hidden>Clear filters</button></div>
+    <div class="prod-grid" id="grid"></div>
+    <div class="empty" id="empty" hidden>
+      <h3>No pieces match that search</h3>
+      <p>Try a different word or category, or message us on WhatsApp and we will help you find something.</p>
+      <button class="btn btn-glass" id="empty-reset" type="button">Show everything</button>
+    </div>
+  </div>
+</main>
+<script type="module" src="/js/pages/shop.js"></script>
+</body>
+</html>
