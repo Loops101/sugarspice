@@ -10,14 +10,21 @@ const { fail, randomId } = require('./util');
 // Signing secret: env var, else generated once and kept in the data folder
 function getSecret() {
   if (config.JWT_SECRET) return config.JWT_SECRET;
+  // Serverless: there is no writable disk, so derive a stable secret from the storage token (known only to the owner)
+  const redis = require('./redis');
+  if (redis.enabled) return crypto.createHmac('sha256', redis.token).update('ssc-session-secret').digest('hex');
   const file = path.join(config.DATA_DIR, 'secret.key');
   try {
     return fs.readFileSync(file, 'utf8').trim();
   } catch {
     const s = crypto.randomBytes(48).toString('hex');
     fs.mkdirSync(config.DATA_DIR, { recursive: true });
-    fs.writeFileSync(file, s, { mode: 0o600 });
-    return s;
+    try {
+      fs.writeFileSync(file, s, { mode: 0o600, flag: 'wx' }); // 'wx': if another process created it first, use theirs
+      return s;
+    } catch {
+      return fs.readFileSync(file, 'utf8').trim();
+    }
   }
 }
 const SECRET = getSecret();
@@ -90,23 +97,34 @@ function validatePassword(pw) {
   if (pw.length > 100) fail(400, 'Password is too long.', 'password');
 }
 
-// Create the first admin on first run
+// Create the first admin on first run, and keep it in step with ADMIN_EMAIL / ADMIN_PASSWORD
+// when the password was never chosen by a person (auto-generated), or when RESET_ADMIN=1 is set.
 function ensureAdmin() {
-  if (db.data.users.some((u) => u.role === 'admin')) return null;
-  const password = config.ADMIN_PASSWORD || crypto.randomBytes(9).toString('base64url');
-  db.data.users.push({
-    id: 'u_' + randomId(6),
-    role: 'admin',
-    name: 'Store Admin',
-    email: config.ADMIN_EMAIL,
-    phone: '',
-    passwordHash: hashPassword(password),
-    tokenVersion: 0,
-    createdAt: Date.now(),
-    addresses: [],
-  });
-  db.save();
-  return { email: config.ADMIN_EMAIL, password, generated: !config.ADMIN_PASSWORD };
+  let admin = db.data.users.find((u) => u.role === 'admin');
+  if (!admin) {
+    const password = config.ADMIN_PASSWORD || crypto.randomBytes(9).toString('base64url');
+    db.data.users.push({
+      id: 'u_' + randomId(6), role: 'admin', name: 'Store Owner', email: config.ADMIN_EMAIL, phone: '',
+      passwordHash: hashPassword(password), tokenVersion: 0, createdAt: Date.now(), addresses: [],
+      generated: !config.ADMIN_PASSWORD,
+      envSync: syncToken(),
+    });
+    db.save();
+    return { email: config.ADMIN_EMAIL, password, generated: !config.ADMIN_PASSWORD };
+  }
+  if (config.ADMIN_PASSWORD && (admin.generated || process.env.RESET_ADMIN === '1') && admin.envSync !== syncToken()) {
+    admin.passwordHash = hashPassword(config.ADMIN_PASSWORD);
+    admin.email = config.ADMIN_EMAIL;
+    admin.generated = false;
+    admin.envSync = syncToken();
+    admin.tokenVersion = (admin.tokenVersion || 0) + 1;
+    db.save();
+    return { email: admin.email, password: config.ADMIN_PASSWORD, generated: false, reset: true };
+  }
+  return null;
+}
+function syncToken() {
+  return crypto.createHash('sha256').update(config.ADMIN_EMAIL + '\n' + config.ADMIN_PASSWORD + '\n' + (process.env.RESET_ADMIN || '')).digest('hex').slice(0, 24);
 }
 
 const publicUser = (u) => ({

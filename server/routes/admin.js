@@ -134,6 +134,10 @@ router.get('/stats', (req, res) => {
   });
 });
 
+router.post('/catalogue/load', owner, (req, res) => {
+  res.json(require('../seed').loadCatalogue());
+});
+
 router.post('/demo/clear', owner, (req, res) => {
   require('../seed').clearDemo();
   res.json({ ok: true });
@@ -267,6 +271,21 @@ router.put('/products/:id', ah((req, res) => {
   res.json({ product: adminProduct(p) });
 }));
 
+router.patch('/products/:id/quick', ah((req, res) => {
+  const p = db.data.products.find((x) => x.id === req.params.id);
+  if (!p) fail(404, 'Product not found.');
+  const b = req.body || {};
+  if (b.price !== undefined) {
+    const price = toInt(b.price, { min: 1, max: 1000000 });
+    if (price === null) fail(400, 'Enter the price as a whole number of shillings.', 'price');
+    if (p.oldPrice && p.oldPrice <= price) p.oldPrice = null; // a sale price no longer makes sense
+    p.price = price;
+  }
+  if (b.active !== undefined) p.active = !!b.active;
+  db.save();
+  res.json({ product: adminProduct(p) });
+}));
+
 router.patch('/products/:id/stock', ah((req, res) => {
   const p = db.data.products.find((x) => x.id === req.params.id);
   if (!p) fail(404, 'Product not found.');
@@ -293,7 +312,7 @@ router.delete('/products/:id', owner, ah((req, res) => {
 
 // Image upload: raw bytes in the request body, type verified from the file itself
 const MAX_UPLOAD = 5 * 1024 * 1024;
-router.post('/upload', express.raw({ type: () => true, limit: MAX_UPLOAD }), ah((req, res) => {
+router.post('/upload', express.raw({ type: () => true, limit: MAX_UPLOAD }), ah(async (req, res) => {
   const buf = req.body;
   if (!Buffer.isBuffer(buf) || buf.length < 12) fail(400, 'No image received.');
   let ext = null;
@@ -302,7 +321,13 @@ router.post('/upload', express.raw({ type: () => true, limit: MAX_UPLOAD }), ah(
   else if (buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP') ext = 'webp';
   if (!ext) fail(400, 'Please upload a JPG, PNG or WebP image.');
   const name = randomId(10) + '.' + ext;
-  fs.writeFileSync(path.join(config.UPLOAD_DIR, name), buf);
+  if (require('../redis').enabled) {
+    // No disk on serverless hosts: keep the photo in the shared storage (the admin shrinks photos before sending)
+    if (buf.length > 700 * 1024) fail(413, 'That photo is too large. Try a smaller one.');
+    await require('../redis').cmd('SET', 'ssc:img:' + name, buf.toString('base64'));
+  } else {
+    fs.writeFileSync(path.join(config.UPLOAD_DIR, name), buf);
+  }
   res.status(201).json({ url: '/uploads/' + name });
 }));
 

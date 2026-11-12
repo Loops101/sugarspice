@@ -109,7 +109,55 @@ function clearDemo() {
   db.save();
 }
 
-module.exports = { addDemo, clearDemo };
+/** The shop's real products (see catalogue.js). Not flagged as demo, so nothing here is ever auto-removed. */
+function addCatalogue() {
+  const d = db.data;
+  const now = Date.now();
+  const catalogue = require('./catalogue');
+  for (const c of catalogue) if (!d.settings.categories.includes(c.category)) d.settings.categories.push(c.category);
+  catalogue.forEach((p, i) => {
+    d.counters.product += 1;
+    d.products.push({
+      id: 'spc-' + String(d.counters.product).padStart(3, '0'),
+      name: p.name, category: p.category, price: p.price, oldPrice: null, art: p.art, description: p.description, stock: p.stock,
+      images: p.photos, featured: !!p.featured, bestseller: !!p.bestseller, active: p.active,
+      createdAt: now - (catalogue.length - i) * 60 * 1000,
+    });
+  });
+  d.meta.seeded = true;
+  db.save();
+}
+
+/**
+ * For shops that were set up before the real catalogue existed (or lost the photos):
+ * adds any catalogue product that is missing, and gives photos to products with the same name that have none.
+ */
+function loadCatalogue() {
+  const d = db.data;
+  const catalogue = require('./catalogue');
+  const byName = new Map(d.products.map((p) => [p.name.trim().toLowerCase(), p]));
+  let added = 0; let photos = 0;
+  for (const c of catalogue) {
+    if (!d.settings.categories.includes(c.category)) d.settings.categories.push(c.category);
+    const have = byName.get(c.name.trim().toLowerCase());
+    if (have) {
+      if (!have.images || !have.images.length) { have.images = c.photos; photos += 1; }
+      continue;
+    }
+    d.counters.product += 1;
+    d.products.push({
+      id: 'spc-' + String(d.counters.product).padStart(3, '0'),
+      name: c.name, category: c.category, price: c.price, oldPrice: null, art: c.art, description: c.description, stock: c.stock,
+      images: c.photos, featured: !!c.featured, bestseller: !!c.bestseller, active: c.active, createdAt: Date.now(),
+    });
+    added += 1;
+  }
+  d.meta.seeded = true;
+  db.save();
+  return { added, photos };
+}
+
+module.exports = { addDemo, clearDemo, addCatalogue, loadCatalogue };
 
 if (require.main === module) {
   const cmd = process.argv[2];

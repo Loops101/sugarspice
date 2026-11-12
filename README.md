@@ -4,6 +4,13 @@ A complete jewelry store for Nairobi: browse, add to bag and **check out on the 
 
 Only four dependencies. Needs Node 18 or newer (22 recommended).
 
+## Hosting
+
+- **Shared hosting with cPanel "Setup Node.js App":** follow `DEPLOY-CPANEL.md`. No extra database needed.
+- **Linux VPS:** follow `DEPLOY-VPS.md`. A script sets up the app, HTTPS, firewall and daily backups.
+- **Vercel:** follow `DEPLOY-VERCEL.md` (needs the free Upstash Redis database).
+- **Any Node host with a disk** (Render with a disk, Railway volume, Fly volume, a VPS): see "Deploying" below.
+
 ## Run it
 
     npm install
@@ -14,7 +21,9 @@ Open http://localhost:3000. The shop is at `/`, the admin at `/admin`.
 
 On the first start the server creates the admin account and prints the login in the console. To choose your own, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` before the first start. Forgot it later: `npm run reset-admin -- "NewPassword123"`.
 
-The first start also loads **sample products, orders and a WELCOME10 coupon** so the dashboard has something to show. Remove them with the button on the dashboard, or `npm run demo:clear`. Bring them back with `npm run demo:add`.
+The first start loads the shop's **starting catalogue** (the photos in `public/products`). Necklaces and the chain set are created hidden because their prices were not confirmed: open Products, set the price and tick *Show in shop*. Stock is a placeholder of 5 per item, so set the real counts.
+
+Want sample orders so the dashboard has charts to look at? Start once with `SEED=demo npm start`, or run `npm run demo:add`; remove them with the dashboard button or `npm run demo:clear`.
 
 ## Owner and employee access
 
@@ -69,4 +78,7 @@ HttpOnly cookie sessions, bcrypt password hashes, rate limits on sign-in and ord
 
 ## Tests
 
-With the server running: `BASE=http://localhost:3000 node test/api.test.js`.
+Start a fresh server with sample data, then run the checks:
+
+    SEED=demo ADMIN_EMAIL=admin@sugarspice.local ADMIN_PASSWORD=TestAdmin123 DATA_DIR=/tmp/ssc-test PORT=3111 npm start
+    node test/api.test.js

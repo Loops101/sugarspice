@@ -455,3 +455,12 @@ body.has-sticky-pay .float-wa { display: none; }
 
 .panel > :last-child { margin-bottom: 0; }
 .brand-mark { width: 48px; height: 48px; }
+
+/* Hero: three real product photos in a glass-framed collage */
+.hero-photos { position: absolute; inset: 0; }
+.hero-photos .hp { position: absolute; display: block; overflow: hidden; border-radius: var(--r-lg); border: 1px solid var(--line-strong); background: var(--onyx-2); box-shadow: 0 30px 60px -24px #000, 0 0 0 6px rgba(255, 255, 255, 0.04); }
+.hero-photos img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-photos .hp1 { left: 22%; top: 2%; width: 56%; height: 66%; z-index: 2; }
+.hero-photos .hp2 { left: 0; top: 34%; width: 38%; height: 50%; z-index: 1; }
+.hero-photos .hp3 { right: 0; top: 46%; width: 40%; height: 50%; z-index: 3; }
+.cat-tile .cat-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }

@@ -18,20 +18,23 @@ const ROOT = path.join(__dirname, '..');
 })();
 
 const env = process.env;
-const DATA_DIR = env.DATA_DIR ? path.resolve(env.DATA_DIR) : path.join(ROOT, 'data');
+const SERVERLESS = !!(env.VERCEL || env.AWS_LAMBDA_FUNCTION_NAME);
+const DATA_DIR = env.DATA_DIR ? path.resolve(env.DATA_DIR) : SERVERLESS ? '/tmp/ssc-data' : path.join(ROOT, 'data');
 
 module.exports = {
   ROOT,
   PORT: parseInt(env.PORT || '3000', 10),
   IS_PROD: env.NODE_ENV === 'production',
-  TRUST_PROXY: env.TRUST_PROXY ? 1 : 0,
+  SERVERLESS,
+  TRUST_PROXY: env.TRUST_PROXY || SERVERLESS ? 1 : 0,
   DATA_DIR,
   UPLOAD_DIR: path.join(DATA_DIR, 'uploads'),
   PUBLIC_DIR: path.join(ROOT, 'public'),
+  VIEWS_DIR: path.join(ROOT, 'views'),
   ADMIN_EMAIL: (env.ADMIN_EMAIL || 'admin@sugarspice.local').toLowerCase(),
   ADMIN_PASSWORD: env.ADMIN_PASSWORD || '',
   JWT_SECRET: env.JWT_SECRET || '',
-  PUBLIC_URL: (env.PUBLIC_URL || '').replace(/\/+$/, ''),
+  PUBLIC_URL: (env.PUBLIC_URL || (env.VERCEL_PROJECT_PRODUCTION_URL ? 'https://' + env.VERCEL_PROJECT_PRODUCTION_URL : '')).replace(/\/+$/, ''),
   MPESA: {
     env: env.MPESA_ENV === 'production' ? 'production' : 'sandbox',
     consumerKey: env.MPESA_CONSUMER_KEY || '',

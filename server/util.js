@@ -59,7 +59,7 @@ const safeEqual = (a, b) => {
 
 // Only allow images we host or https URLs (blocks javascript:, data: etc.)
 const isSafeImageUrl = (u) =>
-  typeof u === 'string' && u.length < 600 && (/^\/uploads\/[A-Za-z0-9._-]+$/.test(u) || /^https:\/\/[^\s"'<>]+$/.test(u));
+  typeof u === 'string' && u.length < 600 && (/^\/(?:uploads|products)\/[A-Za-z0-9._-]+$/.test(u) || /^https:\/\/[^\s"'<>]+$/.test(u));
 
 const EAT_OFFSET_MS = 3 * 3600 * 1000; // Kenya is UTC+3 all year
 const dayKeyEAT = (ms) => new Date(ms + EAT_OFFSET_MS).toISOString().slice(0, 10);

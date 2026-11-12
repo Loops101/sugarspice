@@ -3,6 +3,21 @@ import { api } from '/js/api.js';
 import { thumb, openSheet, confirmDialog, field, errorBox, showError, checkbox } from './common.js';
 import { showFormError } from '/js/ui.js';
 
+/** Phone photos are huge. Resize to 1200px and re-save as JPEG (about 150-300 KB) before uploading. */
+async function shrink(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1200 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.82));
+    return blob && blob.size < file.size ? blob : file;
+  } catch { return file; }
+}
+
 const ARTS = [['', 'Automatic'], ['necklace', 'Necklace'], ['earrings', 'Earrings'], ['bracelet', 'Bracelet'], ['ring', 'Ring'], ['set', 'Set'], ['chain', 'Chain']];
 
 async function editProduct(p, categories, done) {
@@ -18,7 +33,7 @@ async function editProduct(p, categories, done) {
         data.images.length < 6 ? h('label', { class: 'upload-btn' }, icon('image', 22), h('span', { text: 'Add photo' }),
           h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', multiple: true, class: 'sr-only', onchange: async (e) => {
             for (const f of [...e.target.files].slice(0, 6 - data.images.length)) {
-              try { const r = await api('/admin/upload', { method: 'POST', raw: f, headers: { 'Content-Type': 'application/octet-stream' } }); data.images.push(r.url); } catch (ex) { toast(ex.message, 'err'); }
+              try { const r = await api('/admin/upload', { method: 'POST', raw: await shrink(f), headers: { 'Content-Type': 'application/octet-stream' } }); data.images.push(r.url); } catch (ex) { toast(ex.message, 'err'); }
             }
             drawPhotos();
           } })) : null);
@@ -63,8 +78,13 @@ export async function render(root, ctx) {
   const search = h('input', { class: 'input grow', type: 'search', value: q, placeholder: 'Search products', 'aria-label': 'Search products', oninput: debounce(() => { q = search.value.trim().toLowerCase(); draw(); }, 150) });
   const catSel = h('select', { class: 'input', 'aria-label': 'Category', onchange: () => { cat = catSel.value; draw(); } }, h('option', { value: '', text: 'All categories' }), settings.categories.map((c) => h('option', { value: c, text: c })));
   const reload = async () => { const r = await api('/admin/products'); products.splice(0, products.length, ...r.products); draw(); };
-  mount(root, h('div', { class: 'page-title' }, h('div', null, h('h1', { text: 'Products' }), h('p', { text: 'Add pieces, update stock and prices, and hide what you no longer sell.' })),
-    h('button', { class: 'btn btn-gold', type: 'button', onclick: () => editProduct(null, settings.categories, reload) }, icon('plus'), ' Add product')),
+  mount(root, h('div', { class: 'page-title' }, h('div', null, h('h1', { text: 'Products' }), h('p', { text: 'Change a price or stock number right in the list, tap Live/Hidden to show or hide a piece, or press Edit for everything else.' })),
+    h('div', { style: 'display:flex;gap:10px;flex-wrap:wrap' },
+      ctx.user.role === 'admin' ? h('button', { class: 'btn btn-glass', type: 'button', text: 'Load shop catalogue', onclick: async () => {
+        if (!(await confirmDialog({ title: 'Load the shop catalogue?', message: 'Adds the shop\'s products with their photos. Products with the same name are kept and only get photos if they have none. Nothing is deleted.', confirmText: 'Load' }))) return;
+        try { const r = await api('/admin/catalogue/load', { method: 'POST', body: {} }); toast(`${r.added} added, ${r.photos} given photos`); reload(); } catch (ex) { toast(ex.message, 'err'); }
+      } }) : null,
+      h('button', { class: 'btn btn-gold', type: 'button', onclick: () => editProduct(null, settings.categories, reload) }, icon('plus'), ' Add product'))),
     h('div', { class: 'toolbar' }, search, catSel), list);
 
   function draw() {
@@ -77,11 +97,19 @@ export async function render(root, ctx) {
         stock.addEventListener('change', async () => {
           try { const r = await api(`/admin/products/${p.id}/stock`, { method: 'PATCH', body: { stock: stock.value } }); p.stock = r.product.stock; stock.value = p.stock; toast('Stock updated'); } catch (ex) { toast(ex.message, 'err'); stock.value = p.stock; }
         });
+        const price = h('input', { class: 'input stock-in', inputmode: 'numeric', value: p.price, 'aria-label': `Price in KSh for ${p.name}`, style: 'width:96px' });
+        price.addEventListener('change', async () => {
+          try { const r = await api(`/admin/products/${p.id}/quick`, { method: 'PATCH', body: { price: price.value } }); p.price = r.product.price; p.oldPrice = r.product.oldPrice; price.value = p.price; toast('Price updated'); draw(); } catch (ex) { toast(ex.message, 'err'); price.value = p.price; }
+        });
+        const vis = h('button', { class: 'pill ' + (p.active ? 'ok' : 'mute'), type: 'button', style: 'cursor:pointer;min-height:44px;padding:0 16px', 'aria-label': `${p.name} is ${p.active ? 'live' : 'hidden'}. Tap to ${p.active ? 'hide' : 'show'} it.`, text: p.active ? 'Live' : 'Hidden' });
+        vis.addEventListener('click', async () => {
+          try { const r = await api(`/admin/products/${p.id}/quick`, { method: 'PATCH', body: { active: !p.active } }); p.active = r.product.active; toast(p.active ? 'Now live in the shop' : 'Hidden from the shop'); draw(); } catch (ex) { toast(ex.message, 'err'); }
+        });
         return h('tr', null,
           h('td', { class: 'nolabel' }, h('div', { class: 'cell-prod' }, thumb(p), h('span', null, p.name, h('span', { class: 'sub', text: p.category + (p.images && p.images.length ? '' : ' · No photo yet') })))),
-          h('td', { class: 'num', 'data-label': 'Price' }, kes(p.price), p.oldPrice ? h('span', { class: 'sub', style: 'text-decoration:line-through', text: kes(p.oldPrice) }) : null),
+          h('td', { class: 'num', 'data-label': 'Price (KSh)' }, price, p.oldPrice ? h('span', { class: 'sub', style: 'text-decoration:line-through', text: kes(p.oldPrice) }) : null),
           h('td', { 'data-label': 'Stock' }, stock),
-          h('td', { 'data-label': 'Visible' }, h('span', { class: 'pill ' + (p.active ? 'ok' : 'mute'), text: p.active ? 'Live' : 'Hidden' })),
+          h('td', { 'data-label': 'Visible' }, vis),
           h('td', { class: 'nolabel', style: 'text-align:right;white-space:nowrap' },
             h('button', { class: 'btn btn-glass', type: 'button', style: 'min-height:44px;padding:0 16px', text: 'Edit', onclick: () => editProduct(p, settings.categories, reload) }), ' ',
             ctx.user.role !== 'admin' ? null : h('button', { class: 'icon-btn', type: 'button', 'aria-label': `Delete ${p.name}`, onclick: async () => {

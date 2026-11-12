@@ -1,3 +1,4 @@
+const fetch = require('./fetch');
 /**
  * M-Pesa Daraja STK Push.
  *

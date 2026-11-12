@@ -2,7 +2,7 @@ import { h, $, mount, icon, kes, reveal } from '../ui.js';
 import { initLayout, waLink } from '../layout.js';
 import { heroArt, art, kindForCategory } from '../art.js';
 import { getProducts } from '../store.js';
-import { productCard, skeletons } from '../card.js';
+import { productCard, skeletons, media } from '../card.js';
 
 const { store } = await initLayout();
 
@@ -54,17 +54,33 @@ if (!products.length) {
   mount(grids.new, newest.map((p) => productCard(p, store)));
   mount(grids.best, best.slice(0, 4).map((p) => productCard(p, store)));
 
-  // Categories with live counts
-  mount($('#cat-grid'), store.categories.map((c) => {
-    const n = products.filter((p) => p.category === c).length;
+  // Categories that have pieces, each shown with a real photo from that category
+  mount($('#cat-grid'), store.categories.filter((c) => products.some((p) => p.category === c)).map((c) => {
+    const inCat = products.filter((p) => p.category === c);
+    const n = inCat.length;
+    const cover = inCat.find((p) => p.images && p.images.length) || inCat[0];
+    const pic = cover.images && cover.images.length ? media(cover) : art(kindForCategory(c), c);
+    if (pic.tagName === 'IMG') pic.className = 'cat-photo';
     return h('a', { class: 'cat-tile reveal', href: `/shop.html?category=${encodeURIComponent(c)}`, 'aria-label': `${c}, ${n} piece${n === 1 ? '' : 's'}` },
-      art(kindForCategory(c), c), h('div', { class: 'label' }, h('span', { text: c }), h('small', { text: `${n} piece${n === 1 ? '' : 's'}` })));
+      pic, h('div', { class: 'label' }, h('span', { text: c }), h('small', { text: `${n} piece${n === 1 ? '' : 's'}` })));
   }));
+
+  // Hero: real photos when we have them
+  const shots = [...products.filter((p) => p.featured && p.images && p.images.length), ...products.filter((p) => !p.featured && p.images && p.images.length)]
+    .filter((p, i, a) => a.findIndex((q) => q.category === p.category) === i || i < 3).slice(0, 3);
+  if (shots.length >= 3) {
+    const art0 = stage.querySelector('svg.art');
+    const frame = h('div', { class: 'hero-photos', 'aria-hidden': 'true' }, shots.map((p, i) => h('a', { class: 'hp hp' + (i + 1), href: `/product.html?id=${encodeURIComponent(p.id)}`, tabindex: '-1' }, h('img', { src: p.images[0], alt: '', loading: i ? 'lazy' : 'eager', decoding: 'async' }))));
+    if (art0) art0.replaceWith(frame); else stage.prepend(frame);
+  }
 
   // Hero chips from real prices
   const from = (cat) => { const l = products.filter((p) => p.category === cat && p.stock > 0).map((p) => p.price); return l.length ? Math.min(...l) : null; };
   const chip = (el, label, price) => { if (price == null) return; mount(el, h('div', null, h('small', { text: label }), h('strong', { text: kes(price) }))); el.hidden = false; };
-  chip($('#chip-a'), 'Sets from', from('Sets'));
-  chip($('#chip-b'), 'Stainless steel from', from('Stainless Steel'));
+  const cats = store.categories.filter((c) => from(c) != null);
+  const pick = ['Earrings', 'Rings', 'Hats', 'Sets'].filter((c) => cats.includes(c));
+  const [ca, cb] = [pick[0] || cats[0], pick[1] || cats[1]];
+  if (ca) chip($('#chip-a'), `${ca} from`, from(ca));
+  if (cb) chip($('#chip-b'), `${cb} from`, from(cb));
 }
 reveal();

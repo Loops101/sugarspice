@@ -61,7 +61,7 @@ function render() {
   syncUrl();
 }
 
-mount($('#chips'), ['All', ...store.categories].map((c) => h('button', { class: 'chip', type: 'button', 'aria-pressed': 'false', onclick: () => { state.category = c; render(); }, text: c })));
+mount($('#chips'), ['All', ...store.categories.filter((c) => !products.length || products.some((p) => p.category === c))].map((c) => h('button', { class: 'chip', type: 'button', 'aria-pressed': 'false', onclick: () => { state.category = c; render(); }, text: c })));
 
 const reset = () => { state.category = 'All'; state.q = ''; state.instock = false; state.sort = 'featured'; $('#q').value = ''; $('#sort').value = 'featured'; $('#instock').checked = false; render(); };
 $('#q').value = state.q; $('#sort').value = state.sort; $('#instock').checked = state.instock;
